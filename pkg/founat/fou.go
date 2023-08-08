@@ -55,10 +55,10 @@ type FoUTunnel interface {
 }
 
 // NewFoUTunnel creates a new FoUTunnel.
-// port is the UDP port to receive FoU packets.
+// sport/dport is the UDP port to receive FoU packets.
 // localIPv4 is the local IPv4 address of the IPIP tunnel.  This can be nil.
 // localIPv6 is the same as localIPv4 for IPv6.
-func NewFoUTunnel(port int, localIPv4, localIPv6 net.IP) FoUTunnel {
+func NewFoUTunnel(sport, dport int, localIPv4, localIPv6 net.IP) FoUTunnel {
 	if localIPv4 != nil && localIPv4.To4() == nil {
 		panic("invalid IPv4 address")
 	}
@@ -66,14 +66,16 @@ func NewFoUTunnel(port int, localIPv4, localIPv6 net.IP) FoUTunnel {
 		panic("invalid IPv6 address")
 	}
 	return &fouTunnel{
-		port:   port,
+		sport:  sport,
+		dport:  dport,
 		local4: localIPv4,
 		local6: localIPv6,
 	}
 }
 
 type fouTunnel struct {
-	port   int
+	sport  int
+	dport  int
 	local4 net.IP
 	local6 net.IP
 
@@ -97,7 +99,7 @@ func (t *fouTunnel) Init() error {
 		err := netlink.FouAdd(netlink.Fou{
 			Family:    netlink.FAMILY_V4,
 			Protocol:  4, // IPv4 over IPv4 (so-called IPIP)
-			Port:      t.port,
+			Port:      t.dport,
 			EncapType: netlink.FOU_ENCAP_DIRECT,
 		})
 		if err != nil {
@@ -119,7 +121,7 @@ func (t *fouTunnel) Init() error {
 		}
 		// workaround for kube-proxy's double NAT problem
 		rulespec := []string{
-			"-p", "udp", "--dport", strconv.Itoa(t.port), "-j", "CHECKSUM", "--checksum-fill",
+			"-p", "udp", "--dport", strconv.Itoa(t.dport), "-j", "CHECKSUM", "--checksum-fill",
 		}
 		if err := ipt.Insert("mangle", "POSTROUTING", 1, rulespec...); err != nil {
 			return fmt.Errorf("failed to setup mangle table: %w", err)
@@ -132,7 +134,7 @@ func (t *fouTunnel) Init() error {
 		err := netlink.FouAdd(netlink.Fou{
 			Family:    netlink.FAMILY_V6,
 			Protocol:  41, // IPv6 over IPv6 (so-called SIT)
-			Port:      t.port,
+			Port:      t.dport,
 			EncapType: netlink.FOU_ENCAP_DIRECT,
 		})
 		if err != nil {
@@ -148,7 +150,7 @@ func (t *fouTunnel) Init() error {
 		}
 		// workaround for kube-proxy's double NAT problem
 		rulespec := []string{
-			"-p", "udp", "--dport", strconv.Itoa(t.port), "-j", "CHECKSUM", "--checksum-fill",
+			"-p", "udp", "--dport", strconv.Itoa(t.dport), "-j", "CHECKSUM", "--checksum-fill",
 		}
 		if err := ipt.Insert("mangle", "POSTROUTING", 1, rulespec...); err != nil {
 			return fmt.Errorf("failed to setup mangle table: %w", err)
@@ -192,8 +194,8 @@ func (t *fouTunnel) addPeer4(addr net.IP) (netlink.Link, error) {
 		LinkAttrs:  attrs,
 		Ttl:        225,
 		EncapType:  netlink.FOU_ENCAP_DIRECT,
-		EncapDport: uint16(t.port),
-		EncapSport: uint16(t.port),
+		EncapDport: uint16(t.dport),
+		EncapSport: uint16(t.sport),
 		Remote:     addr,
 		Local:      t.local4,
 	}
@@ -201,7 +203,136 @@ func (t *fouTunnel) addPeer4(addr net.IP) (netlink.Link, error) {
 		return nil, fmt.Errorf("netlink: failed to add fou link: %w", err)
 	}
 
+	if err := setupIPIPDevices(true, false); err != nil {
+		return nil, fmt.Errorf("netlink: failed to setup ipip device: %w", err)
+	}
+
 	return netlink.LinkByName(linkName)
+}
+
+// setupIPIPDevices ensures the specified v4 and/or v6 devices are created
+//
+// Calling this function may result in tunl0 (v4) or ip6tnl0 (v6) fallback
+// interfaces being created as a result of loading the ipip and ip6_tunnel
+// kernel modules by fou tunnel interfaces. These are catch-all
+// interfaces for the ipip decapsulation stack. By default, these interfaces
+// will be created in new network namespaces, but this behavior can be disabled
+// by setting net.core.fb_tunnels_only_for_init_net = 2.
+//
+// If present, tunl0 is renamed to egress_tunl and ip6tnl0 is
+// renamed to egress_ip6tnl. This is to communicate to the user that this plugin has
+// taken control of the encapsulation stack on the netns, as it currently doesn't
+// explicitly support sharing it with other tools/CNIs. Fallback devices are left
+// unused for production traffic. Only devices that were explicitly created are used.
+func setupIPIPDevices(ipv4, ipv6 bool) error {
+	ipip4Device := "egress_ipip4"
+	ipip6Device := "egress_ipip6"
+	if ipv4 {
+		// Set up IPv4 tunnel device if requested.
+		if err := setupDevice(&netlink.Iptun{
+			LinkAttrs: netlink.LinkAttrs{Name: ipip4Device},
+			FlowBased: true,
+		}); err != nil {
+			return fmt.Errorf("creating %s: %w", ipip4Device, err)
+		}
+
+		// Rename fallback device created by potential kernel module load after
+		// creating tunnel interface.
+		if err := renameDevice("tunl0", "egress_tunl"); err != nil {
+			return fmt.Errorf("renaming fallback device %s: %w", "tunl0", err)
+		}
+	} else {
+		if err := removeDevice(ipip4Device); err != nil {
+			return fmt.Errorf("removing %s: %w", ipip4Device, err)
+		}
+	}
+
+	if ipv6 {
+		// Set up IPv6 tunnel device if requested.
+		if err := setupDevice(&netlink.Ip6tnl{
+			LinkAttrs: netlink.LinkAttrs{Name: ipip6Device},
+			FlowBased: true,
+		}); err != nil {
+			return fmt.Errorf("creating %s: %w", ipip6Device, err)
+		}
+
+		// Rename fallback device created by potential kernel module load after
+		// creating tunnel interface.
+		if err := renameDevice("ip6tnl0", "egress_ip6tnl"); err != nil {
+			return fmt.Errorf("renaming fallback device %s: %w", "tunl0", err)
+		}
+	} else {
+		if err := removeDevice(ipip6Device); err != nil {
+			return fmt.Errorf("removing %s: %w", ipip6Device, err)
+		}
+	}
+
+	return nil
+}
+
+// setupDevice creates and configures a device based on the given netlink attrs.
+func setupDevice(attrs netlink.Link) error {
+	name := attrs.Attrs().Name
+
+	// Reuse existing tunnel interface created by previous runs.
+	l, err := netlink.LinkByName(name)
+	if err != nil {
+		if err := netlink.LinkAdd(attrs); err != nil {
+			return fmt.Errorf("netlink: failed to create device %s: %w", name, err)
+		}
+
+		// Fetch the link we've just created.
+		l, err = netlink.LinkByName(name)
+		if err != nil {
+			return fmt.Errorf("netlink: failed to retrieve created device %s: %w", name, err)
+		}
+	}
+
+	if err := configureDevice(l); err != nil {
+		return fmt.Errorf("failed to set up device %s: %w", l.Attrs().Name, err)
+	}
+
+	return nil
+}
+
+// configureDevice puts the given link into the up state
+func configureDevice(link netlink.Link) error {
+	ifName := link.Attrs().Name
+
+	if err := netlink.LinkSetUp(link); err != nil {
+		return fmt.Errorf("netlink: failed to set link %s up: %w", ifName, err)
+	}
+	return nil
+}
+
+// removeDevice removes the device with the given name. Returns error if the
+// device exists but was unable to be removed.
+func removeDevice(name string) error {
+	link, err := netlink.LinkByName(name)
+	if err != nil {
+		return nil
+	}
+
+	if err := netlink.LinkDel(link); err != nil {
+		return fmt.Errorf("netlink: failed to remove device %s: %w", name, err)
+	}
+
+	return nil
+}
+
+// renameDevice renames a network device from and to a given value. Returns nil
+// if the device does not exist.
+func renameDevice(from, to string) error {
+	link, err := netlink.LinkByName(from)
+	if err != nil {
+		return nil
+	}
+
+	if err := netlink.LinkSetName(link, to); err != nil {
+		return fmt.Errorf("netlink: failed to rename device %s to %s: %w", from, to, err)
+	}
+
+	return nil
 }
 
 func (t *fouTunnel) addPeer6(addr net.IP) (netlink.Link, error) {
@@ -226,13 +357,17 @@ func (t *fouTunnel) addPeer6(addr net.IP) (netlink.Link, error) {
 		LinkAttrs:  attrs,
 		Ttl:        225,
 		EncapType:  netlink.FOU_ENCAP_DIRECT,
-		EncapDport: uint16(t.port),
-		EncapSport: uint16(t.port),
+		EncapDport: uint16(t.dport),
+		EncapSport: uint16(t.sport),
 		Remote:     addr,
 		Local:      t.local6,
 	}
 	if err := netlink.LinkAdd(link); err != nil {
 		return nil, fmt.Errorf("netlink: failed to add fou6 link: %w", err)
+	}
+
+	if err := setupIPIPDevices(false, true); err != nil {
+		return nil, fmt.Errorf("netlink: failed to setup ipip device: %w", err)
 	}
 
 	return netlink.LinkByName(linkName)

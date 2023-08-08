@@ -49,7 +49,7 @@ func testFoUDual(t *testing.T) {
 			return fmt.Errorf("netlink: failed to add an IPv6 address: %w", err)
 		}
 
-		fou := NewFoUTunnel(5555, net.ParseIP("127.0.0.1"), net.ParseIP("::1"))
+		fou := NewFoUTunnel(0, 5555, net.ParseIP("127.0.0.1"), net.ParseIP("::1"))
 		if err := fou.Init(); err != nil {
 			return fmt.Errorf("fou.Init failed: %w", err)
 		}
@@ -91,8 +91,8 @@ func testFoUDual(t *testing.T) {
 			if iptun.EncapDport != 5555 {
 				return fmt.Errorf("iptun.EncapDport is not 5555: %d", iptun.EncapDport)
 			}
-			if iptun.EncapSport != 5555 {
-				return fmt.Errorf("iptun.EncapSport is not 5555: %d", iptun.EncapSport)
+			if iptun.EncapSport != 0 {
+				return fmt.Errorf("iptun.EncapSport is not 0: %d", iptun.EncapSport)
 			}
 		}
 
@@ -112,8 +112,8 @@ func testFoUDual(t *testing.T) {
 			if ip6tnl.EncapDport != 5555 {
 				return fmt.Errorf("ip6tnl.EncapDport is not 5555: %d", ip6tnl.EncapDport)
 			}
-			if ip6tnl.EncapSport != 5555 {
-				return fmt.Errorf("ip6tnl.EncapSport is not 5555: %d", ip6tnl.EncapSport)
+			if ip6tnl.EncapSport != 0 {
+				return fmt.Errorf("ip6tnl.EncapSport is not 0: %d", ip6tnl.EncapSport)
 			}
 		}
 
@@ -165,7 +165,7 @@ func testFoUV4(t *testing.T) {
 			return err
 		}
 
-		fou := NewFoUTunnel(5555, net.ParseIP("127.0.0.1"), nil)
+		fou := NewFoUTunnel(0, 5555, net.ParseIP("127.0.0.1"), nil)
 		if err := fou.Init(); err != nil {
 			return fmt.Errorf("fou.Init failed: %w", err)
 		}
@@ -202,8 +202,8 @@ func testFoUV4(t *testing.T) {
 			if iptun.EncapDport != 5555 {
 				return fmt.Errorf("iptun.EncapDport is not 5555: %d", iptun.EncapDport)
 			}
-			if iptun.EncapSport != 5555 {
-				return fmt.Errorf("iptun.EncapSport is not 5555: %d", iptun.EncapSport)
+			if iptun.EncapSport != 0 {
+				return fmt.Errorf("iptun.EncapSport is not 0: %d", iptun.EncapSport)
 			}
 		}
 
@@ -246,7 +246,7 @@ func testFoUV6(t *testing.T) {
 			return err
 		}
 
-		fou := NewFoUTunnel(5555, nil, net.ParseIP("::1"))
+		fou := NewFoUTunnel(0, 5555, nil, net.ParseIP("::1"))
 		if err := fou.Init(); err != nil {
 			return fmt.Errorf("fou.Init failed: %w", err)
 		}
@@ -287,8 +287,8 @@ func testFoUV6(t *testing.T) {
 			if ip6tnl.EncapDport != 5555 {
 				return fmt.Errorf("ip6tnl.EncapDport is not 5555: %d", ip6tnl.EncapDport)
 			}
-			if ip6tnl.EncapSport != 5555 {
-				return fmt.Errorf("ip6tnl.EncapSport is not 5555: %d", ip6tnl.EncapSport)
+			if ip6tnl.EncapSport != 0 {
+				return fmt.Errorf("ip6tnl.EncapSport is not 0: %d", ip6tnl.EncapSport)
 			}
 		}
 

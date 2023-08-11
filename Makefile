@@ -1,5 +1,7 @@
 # Makefile for egress-gw-cni-plugin
 
+CONTROLLER_RUNTIME_VERSION := $(shell awk '/sigs\.k8s\.io\/controller-runtime/ {print substr($$2, 2)}' go.mod)
+CONTROLLER_TOOLS_VERSION=0.11.4
 PROTOC_VERSION=22.3
 PROTOC_GEN_GO_VERSION := $(shell awk '/google.golang.org\/protobuf/ {print substr($$2, 2)}' go.mod)
 PROTOC_GEN_GO_GRPC_VERSON=1.3.0
@@ -7,6 +9,9 @@ PROTOC_GEN_DOC_VERSION=1.5.1
 
 ## DON'T EDIT BELOW THIS LINE
 SUDO=sudo
+CONTROLLER_GEN := $(shell pwd)/bin/controller-gen
+SETUP_ENVTEST := $(shell pwd)/bin/setup-envtest
+CRD_OPTIONS = "crd:crdVersions=v1"
 PROTOC_OUTPUTS = pkg/cnirpc/cni.pb.go pkg/cnirpc/cni_grpc.pb.go docs/cni-grpc.md
 PROTOC := PATH=$(PWD)/bin:'$(PATH)' $(PWD)/bin/protoc -I=$(PWD)/include:.
 GOOS := $(shell go env GOOS)
@@ -23,8 +28,9 @@ SHELL = /bin/bash
 
 # Run tests, and set up envtest if not done already.
 .PHONY: test
-test: simple-test
-	go test -race -v -count 1 ./...
+test: simple-test setup-envtest
+	source <($(SETUP_ENVTEST) use -p env); \
+		go test -race -v -count 1 ./...
 
 .PHONY: simple-test
 simple-test: test-tools
@@ -47,13 +53,23 @@ test-founat:
 check-generate:
 	-rm $(ROLES) $(PROTOC_OUTPUTS)
 	$(MAKE) generate
+	$(MAKE) manifests
 	go mod tidy
 	git diff --exit-code --name-only
+
+# Generate manifests e.g. CRD, RBAC etc.
+.PHONY: manifests
+manifests: $(CONTROLLER_GEN)
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Generate code
 .PHONY: generate
 generate: $(CONTROLLER_GEN)
 	$(MAKE) $(PROTOC_OUTPUTS)
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+$(CONTROLLER_GEN):
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_TOOLS_VERSION))
 
 pkg/cnirpc/cni.pb.go: pkg/cnirpc/cni.proto
 	$(PROTOC) --go_out=module=github.com/ysksuzuki/egress-gw-cni-plugin:. $<
@@ -75,6 +91,21 @@ setup:
 	GOBIN=$(PWD)/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@v$(PROTOC_GEN_GO_VERSION)
 	GOBIN=$(PWD)/bin go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v$(PROTOC_GEN_GO_GRPC_VERSON)
 	GOBIN=$(PWD)/bin go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@v$(PROTOC_GEN_DOC_VERSION)
+
+.PHONY: setup-envtest
+setup-envtest: ## Download setup-envtest locally if necessary
+	# see https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest
+	GOBIN=$(shell pwd)/bin go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+# go-get-tool will 'go get' any package $2 and install it to $1.
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+define go-get-tool
+@[ -f $(1) ] || { \
+set -e ;\
+echo "Downloading $(2)" ;\
+GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
+}
+endef
 
 .PHONY: test-tools
 test-tools: staticcheck

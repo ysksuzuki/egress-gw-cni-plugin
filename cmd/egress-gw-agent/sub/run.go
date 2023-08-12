@@ -64,7 +64,7 @@ func subMain() error {
 	if err != nil {
 		return err
 	}
-	server := runners.NewEgressGwAgent(l, grpcLogger)
+	server := runners.NewEgressGwAgent(l, mgr, config.egressPort, grpcLogger)
 	if err := mgr.Add(server); err != nil {
 		return err
 	}

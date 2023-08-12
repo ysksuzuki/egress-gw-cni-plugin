@@ -13,17 +13,12 @@ import (
 )
 
 var config struct {
-	metricsAddr      string
-	healthAddr       string
-	podTableId       int
-	podRulePrio      int
-	exportTableId    int
-	protocolId       int
-	socketPath       string
-	compatCalico     bool
-	egressPort       int
-	registerFromMain bool
-	zapOpts          zap.Options
+	metricsAddr string
+	healthAddr  string
+	protocolId  int
+	socketPath  string
+	egressPort  int
+	zapOpts     zap.Options
 }
 
 var rootCmd = &cobra.Command{

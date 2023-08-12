@@ -1,5 +1,10 @@
 package constants
 
+// AnnEgressPrefix annotation keys
+const (
+	AnnEgressPrefix = "egress.ysksuzuki.com/"
+)
+
 // Keys in CNI_ARGS
 const (
 	PodNameKey      = "K8S_POD_NAME"

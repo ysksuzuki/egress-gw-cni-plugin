@@ -80,6 +80,21 @@ pkg/cnirpc/cni_grpc.pb.go: pkg/cnirpc/cni.proto
 docs/cni-grpc.md: pkg/cnirpc/cni.proto
 	$(PROTOC) --doc_out=docs --doc_opt=markdown,$@ $<
 
+.PHONY: build
+build:
+	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw-cni -ldflags="-s -w" cmd/egress-gw-cni/*.go
+	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-controller -ldflags="-s -w" cmd/egress-controller/*.go
+	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw -ldflags="-s -w" cmd/egress-gw/*.go
+	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw-agent -ldflags="-s -w" cmd/egress-gw-agent/*.go
+
+work/LICENSE:
+	mkdir -p work
+	cp LICENSE work
+
+.PHONY: image
+image: work/LICENSE
+	docker buildx build --no-cache --load -t egress-gw:dev .
+
 .PHONY: setup
 setup:
 	$(SUDO) apt-get update

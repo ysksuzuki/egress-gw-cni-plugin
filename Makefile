@@ -82,10 +82,11 @@ docs/cni-grpc.md: pkg/cnirpc/cni.proto
 
 .PHONY: build
 build:
-	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw-cni -ldflags="-s -w" cmd/egress-gw-cni/*.go
-	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-controller -ldflags="-s -w" cmd/egress-controller/*.go
 	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw -ldflags="-s -w" cmd/egress-gw/*.go
 	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw-agent -ldflags="-s -w" cmd/egress-gw-agent/*.go
+	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw-cni -ldflags="-s -w" cmd/egress-gw-cni/*.go
+	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw-controller -ldflags="-s -w" cmd/egress-gw-controller/*.go
+	GOARCH=$(GOARCH) CGO_ENABLED=0 go build -o work/egress-gw-installer -ldflags="-s -w" cmd/egress-gw-installer/*.go
 
 work/LICENSE:
 	mkdir -p work

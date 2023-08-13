@@ -16,6 +16,6 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends netbase kmod iptables iproute2 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build-env /workdir/work /usr/local/egressgw
+COPY --from=build-env /workdir/work /usr/local/egress-gw
 
 ENV PATH /usr/local/egressgw:$PATH

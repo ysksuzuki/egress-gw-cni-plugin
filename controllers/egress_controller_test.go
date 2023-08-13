@@ -43,7 +43,7 @@ var _ = Describe("Egress reconciler", func() {
 		egr := &EgressReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),
-			Image:  "egress:dev",
+			Image:  "egress-gw:dev",
 			Port:   5555,
 		}
 		err = egr.SetupWithManager(mgr)
@@ -107,14 +107,14 @@ var _ = Describe("Egress reconciler", func() {
 		var egressContainer *corev1.Container
 		for i := range depl.Spec.Template.Spec.Containers {
 			c := &depl.Spec.Template.Spec.Containers[i]
-			if c.Name == "egress" {
+			if c.Name == "egress-gw" {
 				egressContainer = c
 				break
 			}
 		}
 		Expect(egressContainer).NotTo(BeNil())
-		Expect(egressContainer.Image).To(Equal("egress:dev"))
-		Expect(egressContainer.Command).To(Equal([]string{"egress"}))
+		Expect(egressContainer.Image).To(Equal("egress-gw:dev"))
+		Expect(egressContainer.Command).To(Equal([]string{"egress-gw"}))
 		Expect(egressContainer.Env).To(HaveLen(3))
 		Expect(egressContainer.VolumeMounts).To(HaveLen(2))
 		Expect(egressContainer.SecurityContext).NotTo(BeNil())
@@ -232,7 +232,7 @@ var _ = Describe("Egress reconciler", func() {
 		Expect(depl.Spec.Template.Spec.Volumes).To(HaveLen(3))
 		var sidecar, egressContainer *corev1.Container
 		for i := range depl.Spec.Template.Spec.Containers {
-			if depl.Spec.Template.Spec.Containers[i].Name == "egress" {
+			if depl.Spec.Template.Spec.Containers[i].Name == "egress-gw" {
 				egressContainer = &depl.Spec.Template.Spec.Containers[i]
 				continue
 			}
@@ -259,7 +259,7 @@ var _ = Describe("Egress reconciler", func() {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "egress",
+							Name:  "egress-gw",
 							Image: "myegress",
 							Resources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
@@ -294,7 +294,7 @@ var _ = Describe("Egress reconciler", func() {
 
 		egressContainer = &depl.Spec.Template.Spec.Containers[0]
 		Expect(egressContainer.Image).To(Equal("myegress"))
-		Expect(egressContainer.Command).To(Equal([]string{"egress"}))
+		Expect(egressContainer.Command).To(Equal([]string{"egress-gw"}))
 		Expect(egressContainer.Env).To(HaveLen(3))
 		Expect(egressContainer.Resources.Requests).To(HaveKey(corev1.ResourceCPU))
 		res := egressContainer.Resources.Requests[corev1.ResourceCPU]

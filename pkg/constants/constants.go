@@ -35,3 +35,4 @@ const (
 	EnvPodName      = "EGRESS_POD_NAME"
 	EnvEgressName   = "EGRESS_NAME"
 )
+const MetricsNS = "egressgw"

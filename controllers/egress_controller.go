@@ -132,7 +132,7 @@ func (r *EgressReconciler) reconcilePodTemplate(eg *egressv1beta1.Egress, depl *
 
 	var egressContainer *corev1.Container
 	for i := range podSpec.Containers {
-		if podSpec.Containers[i].Name != "egress" {
+		if podSpec.Containers[i].Name != "egress-gw" {
 			continue
 		}
 		egressContainer = &(podSpec.Containers[i])
@@ -141,12 +141,12 @@ func (r *EgressReconciler) reconcilePodTemplate(eg *egressv1beta1.Egress, depl *
 		podSpec.Containers = append([]corev1.Container{{}}, podSpec.Containers...)
 		egressContainer = &(podSpec.Containers[0])
 	}
-	egressContainer.Name = "egress"
+	egressContainer.Name = "egress-gw"
 	if egressContainer.Image == "" {
 		egressContainer.Image = r.Image
 	}
 	if len(egressContainer.Command) == 0 {
-		egressContainer.Command = []string{"egress"}
+		egressContainer.Command = []string{"egress-gw"}
 	}
 	if len(egressContainer.Args) == 0 {
 		egressContainer.Args = []string{"--zap-stacktrace-level=panic"}

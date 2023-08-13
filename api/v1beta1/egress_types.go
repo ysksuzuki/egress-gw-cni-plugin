@@ -17,9 +17,14 @@ limitations under the License.
 package v1beta1
 
 import (
+	"net"
+	"reflect"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -91,52 +96,52 @@ type Metadata struct {
 	Labels map[string]string `json:"labels,omitempty"`
 }
 
-//func (es *EgressSpec) validate() field.ErrorList {
-//	var allErrs field.ErrorList
-//	p := field.NewPath("spec")
-//
-//	pp := p.Child("destinations")
-//	for i, na := range es.Destinations {
-//		_, _, err := net.ParseCIDR(na)
-//		if err != nil {
-//			allErrs = append(allErrs, field.Invalid(pp.Index(i), na, err.Error()))
-//		}
-//	}
-//
-//	if es.Strategy != nil {
-//		switch es.Strategy.Type {
-//		case appsv1.RecreateDeploymentStrategyType:
-//		case appsv1.RollingUpdateDeploymentStrategyType:
-//		default:
-//			allErrs = append(allErrs, field.NotSupported(p.Child("strategy", "type"), es.Strategy.Type, []string{
-//				string(appsv1.RecreateDeploymentStrategyType),
-//				string(appsv1.RollingUpdateDeploymentStrategyType),
-//			}))
-//		}
-//	}
-//
-//	if es.Template != nil {
-//		pp := p.Child("template", "metadata")
-//		allErrs = append(allErrs, validation.ValidateLabels(es.Template.Labels, pp.Child("labels"))...)
-//		pp = pp.Child("annotations")
-//		for k := range es.Template.Annotations {
-//			allErrs = append(allErrs, validation.ValidateLabelName(k, pp)...)
-//		}
-//	}
-//
-//	return allErrs
-//}
+func (es *EgressSpec) validate() field.ErrorList {
+	var allErrs field.ErrorList
+	p := field.NewPath("spec")
 
-//func (es *EgressSpec) validateUpdate(old EgressSpec) field.ErrorList {
-//	allErrs := es.validate()
-//	p := field.NewPath("spec")
-//
-//	if !reflect.DeepEqual(es.Destinations, old.Destinations) {
-//		allErrs = append(allErrs, field.Forbidden(p.Child("destinations"), "unchangeable"))
-//	}
-//
-//	return allErrs
-//}
+	pp := p.Child("destinations")
+	for i, na := range es.Destinations {
+		_, _, err := net.ParseCIDR(na)
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(pp.Index(i), na, err.Error()))
+		}
+	}
+
+	if es.Strategy != nil {
+		switch es.Strategy.Type {
+		case appsv1.RecreateDeploymentStrategyType:
+		case appsv1.RollingUpdateDeploymentStrategyType:
+		default:
+			allErrs = append(allErrs, field.NotSupported(p.Child("strategy", "type"), es.Strategy.Type, []string{
+				string(appsv1.RecreateDeploymentStrategyType),
+				string(appsv1.RollingUpdateDeploymentStrategyType),
+			}))
+		}
+	}
+
+	if es.Template != nil {
+		pp := p.Child("template", "metadata")
+		allErrs = append(allErrs, validation.ValidateLabels(es.Template.Labels, pp.Child("labels"))...)
+		pp = pp.Child("annotations")
+		for k := range es.Template.Annotations {
+			allErrs = append(allErrs, validation.ValidateLabelName(k, pp)...)
+		}
+	}
+
+	return allErrs
+}
+
+func (es *EgressSpec) validateUpdate(old EgressSpec) field.ErrorList {
+	allErrs := es.validate()
+	p := field.NewPath("spec")
+
+	if !reflect.DeepEqual(es.Destinations, old.Destinations) {
+		allErrs = append(allErrs, field.Forbidden(p.Child("destinations"), "unchangeable"))
+	}
+
+	return allErrs
+}
 
 // EgressStatus defines the observed state of Egress
 type EgressStatus struct {

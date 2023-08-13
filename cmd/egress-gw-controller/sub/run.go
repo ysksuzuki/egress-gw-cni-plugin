@@ -95,7 +95,9 @@ func subMain() error {
 		return err
 	}
 
-	// TODO register webhooks
+	if err := (&egressv1beta1.Egress{}).SetupWebhookWithManager(mgr); err != nil {
+		return err
+	}
 
 	setupLog.Info("starting manager")
 	ctx := ctrl.SetupSignalHandler()

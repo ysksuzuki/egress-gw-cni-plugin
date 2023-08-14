@@ -1,0 +1,9 @@
+resources:
+- ../config/default
+
+# Adds namespace to all resources.
+namespace: kube-system
+
+# Labels to add to all resources and selectors.
+commonLabels:
+  app.kubernetes.io/name: egress-gw

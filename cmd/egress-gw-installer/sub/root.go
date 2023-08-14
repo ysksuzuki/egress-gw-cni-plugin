@@ -12,7 +12,7 @@ import (
 
 const (
 	defaultCniBinDir    = "/host/opt/cni/bin"
-	defaultEgressGWPath = "/usr/local/egress-gw/egress-gw"
+	defaultEgressGWPath = "/usr/local/egress-gw/egress-gw-cni"
 )
 
 var rootCmd = &cobra.Command{

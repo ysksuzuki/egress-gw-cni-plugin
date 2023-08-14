@@ -1,0 +1,19 @@
+resources:
+- ../crd
+- ../rbac
+- ../pod
+- ../webhook
+
+patchesStrategicMerge:
+- ./webhook_manifests_patch.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+- name: egress-gw-webhook-server-cert
+  files:
+  - ca.crt=./cert.pem
+  - tls.crt=./cert.pem
+  - tls.key=./key.pem
+  type: "kubernetes.io/tls"

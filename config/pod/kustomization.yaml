@@ -1,0 +1,3 @@
+resources:
+- egress-gw-controller.yaml
+- egress-gw-agent.yaml

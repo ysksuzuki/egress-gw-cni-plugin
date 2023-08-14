@@ -30,9 +30,9 @@ const (
 
 // Environment variables
 const (
-	EnvAddresses    = "EGRESS_POD_ADDRESSES"
-	EnvPodNamespace = "EGRESS_POD_NAMESPACE"
-	EnvPodName      = "EGRESS_POD_NAME"
-	EnvEgressName   = "EGRESS_NAME"
+	EnvAddresses    = "EGRESS_GW_POD_ADDRESSES"
+	EnvPodNamespace = "EGRESS_GW_POD_NAMESPACE"
+	EnvPodName      = "EGRESS_GW_POD_NAME"
+	EnvEgressName   = "EGRESS_GW_NAME"
 )
 const MetricsNS = "egressgw"

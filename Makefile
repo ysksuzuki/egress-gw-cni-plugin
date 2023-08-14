@@ -11,6 +11,9 @@ PROTOC_GEN_DOC_VERSION=1.5.1
 SUDO=sudo
 CONTROLLER_GEN := $(shell pwd)/bin/controller-gen
 SETUP_ENVTEST := $(shell pwd)/bin/setup-envtest
+ROLES = config/rbac/egress-gw-controller_role.yaml \
+	config/rbac/egress-gw-agent_role.yaml \
+	config/rbac/egress-gw_role.yaml
 CRD_OPTIONS = "crd:crdVersions=v1"
 PROTOC_OUTPUTS = pkg/cnirpc/cni.pb.go pkg/cnirpc/cni_grpc.pb.go docs/cni-grpc.md
 PROTOC := PATH=$(PWD)/bin:'$(PATH)' $(PWD)/bin/protoc -I=$(PWD)/include:.
@@ -59,8 +62,45 @@ check-generate:
 
 # Generate manifests e.g. CRD, RBAC etc.
 .PHONY: manifests
-manifests: $(CONTROLLER_GEN)
+manifests: $(CONTROLLER_GEN) $(ROLES)
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+EGRESS_GW_CONTROLLER_ROLE_DEPENDS = controllers/egress_controller.go \
+	controllers/clusterrolebinding_controller.go \
+
+config/rbac/egress-gw-controller_role.yaml: $(EGRESS_GW_CONTROLLER_ROLE_DEPENDS)
+	-rm -rf work
+	mkdir work
+	sed '0,/^package/s/.*/package work/' controllers/egress_controller.go > work/egress_controller.go
+	sed '0,/^package/s/.*/package work/' controllers/clusterrolebinding_controller.go > work/clusterrolebinding_controller.go
+	$(CONTROLLER_GEN) rbac:roleName=egress-gw-controller paths=./work output:stdout > $@
+	rm -rf work
+
+EGRESS_GW_AGENT_DEPENDS = runners/agent.go
+
+config/rbac/egress-gw-agent_role.yaml: $(EGRESS_GW_AGENT_DEPENDS)
+	-rm -rf work
+	mkdir work
+	sed '0,/^package/s/.*/package work/' runners/agent.go > work/agent.go
+	$(CONTROLLER_GEN) rbac:roleName=egress-gw-agent paths=./work output:stdout > $@
+	rm -rf work
+
+config/rbac/egress-gw_role.yaml: controllers/pod_watcher.go
+	-rm -rf work
+	mkdir work
+	sed '0,/^package/s/.*/package work/' $< > work/pod_watcher.go
+	$(CONTROLLER_GEN) rbac:roleName=egress-gw paths=./work output:stdout > $@
+	rm -rf work
+
+# TLS certificates for webhook
+.PHONY: certs
+certs: config/default/cert.pem config/default/key.pem config/default/webhook_manifests_patch.yaml
+
+config/default/cert.pem config/default/key.pem:
+	go run ./cmd/gencert -outdir=$(PWD)/config/default
+
+config/default/webhook_manifests_patch.yaml: config/default/cert.pem config/default/webhook_manifests_patch.yaml.tmpl
+	sed "s/%CACERT%/$$(base64 -w0 < $<)/g" $@.tmpl > $@
 
 # Generate code
 .PHONY: generate

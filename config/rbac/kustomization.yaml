@@ -1,0 +1,9 @@
+resources:
+- serviceaccount.yaml
+- egress-gw-controller_role.yaml
+- egress-gw-agent_role.yaml
+- egress-gw_role.yaml
+- role_binding.yaml
+- leader_election_role.yaml
+- leader_election_role_binding.yaml
+- egress_viewer_role.yaml

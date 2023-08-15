@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	defaultCniConfName  = "05-cilium-cni.conflist"
+	defaultCniEtcDir    = "/host/etc/cni/net.d"
 	defaultCniBinDir    = "/host/opt/cni/bin"
 	defaultEgressGWPath = "/usr/local/egress-gw/egress-gw-cni"
 )
@@ -21,10 +23,19 @@ var rootCmd = &cobra.Command{
 	Long:    `egress-gw-installer setup egress-gw on each node by installing CNI binary and config files.`,
 	Version: egressgw.Version(),
 	RunE: func(cmd *cobra.Command, _ []string) error {
+		cniConfName := viper.GetString("CNI_CONF_NAME")
+		cniEtcDir := viper.GetString("CNI_ETC_DIR")
 		cniBinDir := viper.GetString("CNI_BIN_DIR")
 		egressGWPath := viper.GetString("EGRESS_GW_PATH")
+		cniNetConf := viper.GetString("CNI_NETCONF")
+		cniNetConfFile := viper.GetString("CNI_NETCONF_FILE")
 
-		err := installEgressGW(egressGWPath, cniBinDir)
+		err := installCniConf(cniConfName, cniEtcDir, cniNetConf, cniNetConfFile)
+		if err != nil {
+			return err
+		}
+
+		err = installEgressGW(egressGWPath, cniBinDir)
 		if err != nil {
 			return err
 		}
@@ -52,9 +63,15 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+	viper.BindEnv("CNI_CONF_NAME")
+	viper.BindEnv("CNI_ETC_DIR")
 	viper.BindEnv("CNI_BIN_DIR")
 	viper.BindEnv("EGRESS_GW_PATH")
+	viper.BindEnv("CNI_NETCONF_FILE")
+	viper.BindEnv("CNI_NETCONF")
 
+	viper.SetDefault("CNI_CONF_NAME", defaultCniConfName)
+	viper.SetDefault("CNI_ETC_DIR", defaultCniEtcDir)
 	viper.SetDefault("CNI_BIN_DIR", defaultCniBinDir)
 	viper.SetDefault("EGRESS_GW_PATH", defaultEgressGWPath)
 }

@@ -1,0 +1,15 @@
+{
+  "cniVersion": "0.3.1",
+  "name": "cilium",
+  "plugins": [
+    {
+      "type": "cilium-cni",
+      "enable-debug": true,
+      "log-file": "/var/run/cilium/cilium-cni.log"
+    },
+    {
+      "type": "egress-gw-cni",
+      "socket": "/run/egress-gw.sock"
+    }
+  ]
+}

@@ -21,7 +21,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 		return err
 	}
 
-	if conf.PrevResult != nil {
+	if conf.PrevResult == nil {
 		return types.NewError(types.ErrInvalidNetworkConfig, "egress-gw must be called next to the cilium-cni", "")
 	}
 

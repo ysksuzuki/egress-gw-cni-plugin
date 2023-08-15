@@ -47,7 +47,7 @@ func NewEgressGwAgent(l net.Listener, mgr manager.Manager, egressPort int, logge
 
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get
 // +kubebuilder:rbac:groups="",resources=namespaces;services,verbs=get;list;watch
-// +kubebuilder:rbac:groups=egress.ysuzuki.com,resources=egresses,verbs=get;list;watch
+// +kubebuilder:rbac:groups=egress.ysksuzuki.com,resources=egresses,verbs=get;list;watch
 
 var grpcMetrics = grpc_prometheus.NewServerMetrics()
 

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nat-client
+  namespace: default
+  annotations:
+    egress.ysksuzuki.com/internet: egress
+spec:
+#  tolerations:
+#  - key: test
+#    operator: Exists
+#  nodeSelector:
+#    test: egress-gw
+  containers:
+  - name: ubuntu
+    image: quay.io/cybozu/ubuntu-debug:22.04
+    command: ["pause"]

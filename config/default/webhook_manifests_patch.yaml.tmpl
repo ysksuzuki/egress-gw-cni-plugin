@@ -3,9 +3,6 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: egress-gw-mutating-webhook-configuration
 webhooks:
-- name: maddresspool.kb.io
-  clientConfig:
-    caBundle: "%CACERT%"
 - name: megress.kb.io
   clientConfig:
     caBundle: "%CACERT%"
@@ -15,9 +12,6 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: egress-gw-validating-webhook-configuration
 webhooks:
-- name: vaddresspool.kb.io
-  clientConfig:
-    caBundle: "%CACERT%"
 - name: vegress.kb.io
   clientConfig:
     caBundle: "%CACERT%"

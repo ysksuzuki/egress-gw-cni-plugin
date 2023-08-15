@@ -1,0 +1,19 @@
+apiVersion: egress.ysksuzuki.com/v1beta1
+kind: Egress
+metadata:
+  name: egress
+  namespace: internet
+spec:
+  replicas: 2
+  destinations:
+  - 0.0.0.0/0
+  - ::/0
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: egress-gw-control-plane
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+      containers:
+      - name: egress-gw

@@ -6,6 +6,54 @@ import (
 	"path/filepath"
 )
 
+func installCniConf(cniConfName, cniEtcDir, cniNetConf, cniNetConfFile string) error {
+	data := []byte(cniNetConf)
+	if cniNetConf == "" {
+		bData, err := os.ReadFile(cniNetConfFile)
+		if err != nil {
+			return err
+		}
+		data = bData
+	}
+
+	err := os.MkdirAll(cniEtcDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	files, err := os.ReadDir(cniEtcDir)
+	if err != nil {
+		return err
+	}
+	for _, fi := range files {
+		if fi.IsDir() {
+			continue
+		}
+		err := os.Remove(filepath.Join(cniEtcDir, fi.Name()))
+		if err != nil {
+			return err
+		}
+	}
+
+	f, err := os.Create(filepath.Join(cniEtcDir, cniConfName))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	err = f.Chmod(0644)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return f.Sync()
+}
+
 func installEgressGW(egressGWPath, cniBinDir string) error {
 	f, err := os.Open(egressGWPath)
 	if err != nil {
@@ -42,5 +90,5 @@ func installEgressGW(egressGWPath, cniBinDir string) error {
 		return err
 	}
 
-	return os.Rename(g.Name(), filepath.Join(cniBinDir, "egress-gw"))
+	return os.Rename(g.Name(), filepath.Join(cniBinDir, "egress-gw-cni"))
 }

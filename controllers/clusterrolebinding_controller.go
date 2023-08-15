@@ -9,7 +9,6 @@ import (
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -62,9 +61,7 @@ func (r *crbReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 func reconcileCRB(ctx context.Context, cl client.Client, log logr.Logger, name string) error {
 	crb := &rbacv1.ClusterRoleBinding{}
 	if err := cl.Get(ctx, client.ObjectKey{Name: name}, crb); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
+		return err
 	}
 
 	egresses := &egressv1beta1.EgressList{}

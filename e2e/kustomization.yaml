@@ -4,6 +4,12 @@ resources:
 # Adds namespace to all resources.
 namespace: kube-system
 
+configMapGenerator:
+- name: egress-gw-config
+  namespace: system
+  files:
+  - cni_netconf=../netconf.json
+
 # Labels to add to all resources and selectors.
 commonLabels:
   app.kubernetes.io/name: egress-gw

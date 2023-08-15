@@ -18,4 +18,4 @@ RUN apt-get update \
 
 COPY --from=build-env /workdir/work /usr/local/egress-gw
 
-ENV PATH /usr/local/egressgw:$PATH
+ENV PATH /usr/local/egress-gw:$PATH

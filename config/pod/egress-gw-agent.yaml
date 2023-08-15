@@ -64,6 +64,12 @@ spec:
       - name: egress-gw-installer
         image: egress-gw:dev
         command: ["egress-gw-installer"]
+        env:
+        - name: CNI_NETCONF
+          valueFrom:
+            configMapKeyRef:
+              name: egress-gw-config
+              key: cni_netconf
         securityContext:
           privileged: true
         volumeMounts:

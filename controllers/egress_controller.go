@@ -91,7 +91,7 @@ func (r *EgressReconciler) reconcileServiceAccount(ctx context.Context, log logr
 	if apierrors.IsNotFound(err) {
 		sa.Namespace = ns
 		sa.Name = constants.SAEgress
-		log.Info("creating service account for egress")
+		log.Info("creating service account for egress-gw")
 		return r.Create(ctx, sa)
 	}
 	return err

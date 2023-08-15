@@ -22,10 +22,10 @@ const (
 // RBAC resource names
 const (
 	// SAEgress is the name of the ServiceAccount for egress
-	SAEgress = "egress"
+	SAEgress = "egress-gw"
 
 	// CRBEgress is the name of the ClusterRoleBinding for egress
-	CRBEgress = "egress"
+	CRBEgress = "egress-gw"
 )
 
 // Environment variables

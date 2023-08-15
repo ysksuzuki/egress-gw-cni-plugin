@@ -16,5 +16,6 @@
 /.idea
 
 /bin
+/config/default/webhook_manifests_patch.yaml
 /include
 /work

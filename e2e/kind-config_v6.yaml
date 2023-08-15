@@ -3,6 +3,7 @@ kind: Cluster
 networking:
   ipFamily: ipv6
   disableDefaultCNI: true
+  kubeProxyMode: none
 nodes:
 - role: control-plane
 - role: worker

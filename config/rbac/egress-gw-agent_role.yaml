@@ -20,7 +20,7 @@ rules:
   verbs:
   - get
 - apiGroups:
-  - egress.ysuzuki.com
+  - egress.ysksuzuki.com
   resources:
   - egresses
   verbs:

@@ -40,8 +40,8 @@ install-cilium:
 		--set=socketLB.hostNamespaceOnly=true \
 		--set=ipam.operator.autoCreateCiliumPodIPPools.default.ipv4.cidrs='{10.10.0.0/16}' \
 		--set=ipam.operator.autoCreateCiliumPodIPPools.default.ipv4.maskSize=24
-		$(KUBECTL) -n kube-system wait --timeout=3m --for=condition=available deployment/cilium-operator
-		$(KUBECTL) -n kube-system --timeout=3m rollout status daemonset cilium
+	$(KUBECTL) -n kube-system wait --timeout=3m --for=condition=available deployment/cilium-operator
+	$(KUBECTL) -n kube-system --timeout=3m rollout status daemonset cilium
 
 .PHONY: install-egress-gw
 install-egress-gw:

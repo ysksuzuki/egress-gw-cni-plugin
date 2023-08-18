@@ -6,11 +6,11 @@ metadata:
   annotations:
     egress.ysksuzuki.com/internet: egress
 spec:
-#  tolerations:
-#  - key: test
-#    operator: Exists
-#  nodeSelector:
-#    test: egress-gw
+  tolerations:
+  - key: test
+    operator: Exists
+  nodeSelector:
+    test: egress-gw
   containers:
   - name: ubuntu
     image: quay.io/cybozu/ubuntu-debug:22.04

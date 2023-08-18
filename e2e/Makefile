@@ -1,6 +1,7 @@
 KIND_VERSION=0.18.0
 KUBERNETES_VERSION=1.26.3
 KUSTOMIZE_VERSION = 5.0.1
+CILIUM_VERSION = 1.14.1
 CILIUM_CLI_VERSION = 0.15.5
 BINDIR := $(abspath $(PWD)/../bin)
 
@@ -25,7 +26,7 @@ stop: $(KIND)
 
 .PHONY: install-cilium
 install-cilium:
-	CILIUM_CLI_MODE=helm $(CILIUM) install --version v1.14.0 \
+	CILIUM_CLI_MODE=helm $(CILIUM) install --version v$(CILIUM_VERSION) \
 		--set=cni.customConf=true \
 		--set=hubble.relay.enabled=true \
 		--set=ipam.mode=multi-pool \
@@ -49,6 +50,10 @@ install-egress-gw:
 	$(KUSTOMIZE) build --load-restrictor=LoadRestrictionsNone . | $(KUBECTL) apply -f -
 	$(KUBECTL) -n kube-system wait --timeout=3m --for=condition=available deployment/egress-gw-controller
 	$(KUBECTL) -n kube-system --timeout=3m rollout status daemonset egress-gw-agent
+	$(KUBECTL) taint nodes egress-gw-worker test:NoSchedule
+	$(KUBECTL) taint nodes egress-gw-worker2 test:NoSchedule
+	$(KUBECTL) label nodes egress-gw-worker test=egress-gw
+	$(KUBECTL) label nodes egress-gw-worker2 test=egress-gw
 
 .PHONY: test
 test:

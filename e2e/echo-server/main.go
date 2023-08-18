@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -15,7 +16,11 @@ func (echoHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	w.Header().Set("content-type", "application/octet-stream")
-	w.Write(body)
+	if req.URL.Path == "/source" {
+		w.Write([]byte(fmt.Sprintf("source: %s\n", req.RemoteAddr)))
+	} else {
+		w.Write(body)
+	}
 }
 
 func main() {
